@@ -1,0 +1,100 @@
+name: build-and-deploy
+
+# Runs the test suite and track smoke tests, executes the committed notebooks
+# to embed fresh outputs, exports HTML (nbviewer-style) and a JupyterLite
+# in-browser site, then publishes docs/ to Pages.
+#
+# This repo does not carry the notebook-authoring pipeline (the scripts that
+# generate notebooks from source definitions) — notebooks here are committed
+# in their final, student-facing form and this workflow only validates and
+# packages them.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install nbclient nbconvert ipykernel pytest
+          # jupyter_server is required by jupyterlite-core's "contents" addon,
+          # which builds the api/contents index the JupyterLab UI reads to
+          # resolve ?path=<name>.ipynb. Without it, `jupyter lite build` still
+          # copies the raw .ipynb files (served fine at lite/files/...) but
+          # silently fails to index them -- badges then 404 with "File Load
+          # Error / Could not find content with path" even though the file
+          # itself is reachable.
+          pip install jupyterlite-core jupyterlite-pyodide-kernel jupyter_server
+
+      - name: Tracks smoke (synthetic, offline — the capstone-track CI gate)
+        run: |
+          for t in sleep_edf ecg_cinc2017 har ctg_ctu_uhb emg_ninapro bci_eegmmidb; do
+            echo "::group::track $t"; python tracks/$t.py || exit 1; echo "::endgroup::"
+          done
+
+      - name: Run the regression test suite
+        run: python -m pytest tests/ -q
+
+      - name: Execute demo/track notebooks (embed outputs)
+        # Labs are NOT executed here: they are unsolved Type-2 scaffolds (each
+        # has `# TODO` cells that raise NotImplementedError until a student
+        # fills them in), so --execute would always fail on them by design.
+        run: |
+          mkdir -p docs/nb
+          for nb in notebooks/*.ipynb; do
+            jupyter nbconvert --to notebook --execute --inplace "$nb" || exit 1
+          done
+
+      - name: Export notebooks to HTML
+        # Demo/track notebooks export with their freshly-executed outputs.
+        # Labs export as-is (no --execute) — read-only preview of the
+        # unsolved scaffold, same as opening it fresh.
+        run: |
+          python -m nbconvert --to html --template lab --output-dir docs/nb notebooks/*.ipynb
+          python -m nbconvert --to html --template lab --output-dir docs/nb labs/*/*.ipynb
+
+      - name: Stage flattened content for JupyterLite
+        # JupyterLite badges link by bare filename (?path=<name>.ipynb), so every
+        # notebook — demo/track and lab — is staged at the content root. Filenames
+        # are verified unique across notebooks/ and labs/ (see repo history).
+        run: |
+          mkdir -p _lite_content
+          cp notebooks/*.ipynb _lite_content/
+          cp labs/*/*.ipynb _lite_content/
+          cp -r src _lite_content/src
+
+      - name: Build JupyterLite site (in-browser notebooks)
+        run: |
+          jupyter lite build --contents _lite_content --output-dir docs/lite || \
+            echo "JupyterLite build skipped/failed; HTML exports still work without it."
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
