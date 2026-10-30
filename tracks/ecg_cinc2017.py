@@ -228,6 +228,16 @@ class ECGCinC2017Track(TrackAdapter):
         real time could not use it; see `adapter.bandpass_notch.__doc__` and pass
         `cfg={"causal": True}` to measure what a deployable filter costs.
         """
+
+        # PLOT THE CURVE XXX
+        #print("CURVE")
+        # print(rec.fs)
+        # cfg defines what is done (seed, preprocess, impulsive, baseline, powerline, broadband, spectral_method, ar_order, etc.)
+
+     
+        
+
+
         cfg = self._cfg(cfg)
         how = str(cfg.get("preprocess", "none") or "none").lower()
         if how in ("denoise", "by_noise", "noise"):
@@ -434,6 +444,13 @@ if __name__ == "__main__":
     t = ECGCinC2017Track()
     print(t.dataset_card())
     rep = t.run_smoke()
+    #print(rep.get(y_group))
+    print(rep.keys())
+    print(rep.get("y_group"))
+    #XXX
+    # DO 1 st
+ 
+
     from sklearn.metrics import f1_score
     print("SMOKE (synthetic) CV: macroF1=%.3f kappa=%.3f n_records=%d"
           % (f1_score(rep["y_true"], rep["y_pred"], average="macro"),
