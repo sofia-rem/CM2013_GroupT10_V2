@@ -229,6 +229,14 @@ class ECGCinC2017Track(TrackAdapter):
         `cfg={"causal": True}` to measure what a deployable filter costs.
         """
         cfg = self._cfg(cfg)
+
+        #Enables usage of multiple preprocessing filters
+        pre = cfg.get("preprocess")
+        if isinstance(pre, list):
+            for i in pre:
+                rec = self.preprocess(rec, cfg = i)
+            return rec
+      
         how = str(cfg.get("preprocess", "none") or "none").lower()
         if how in ("denoise", "by_noise", "noise"):
             return denoise(rec, impulsive=cfg.get("impulsive"), baseline=cfg.get("baseline"),
