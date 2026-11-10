@@ -472,7 +472,7 @@ class ECGCinC2017Track(TrackAdapter):
                                   epochs={"ecg": x[None, :]}, labels=np.array([ref[rid]])))
         return recs
 
-
+#SMOKE DATA
 if __name__ == "__main__":
     t = ECGCinC2017Track()
     #print(t.dataset_card())
@@ -502,7 +502,7 @@ if __name__ == "__main__":
     t.write_submission(recs[split:], out, model)
     print("wrote submission:", out, "->", open(out).readline().strip(), "...")
 
-
+#REAL DATA
 # import sys, os, subprocess
 # from sklearn.metrics import f1_score
 
