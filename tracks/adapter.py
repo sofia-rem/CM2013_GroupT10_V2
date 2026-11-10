@@ -663,7 +663,8 @@ def _remove_powerline(x, fs, how, f0=50.0, q=30.0, harmonics=(1, 2, 3), mu=0.01,
         from scipy.signal import filtfilt, iirnotch, lfilter
         y = x
         for f in freqs:
-            b, a = iirnotch(f / nyq, q)
+            #b, a = iirnotch(f / nyq, q)
+            b, a = iirnotch(f, q, fs)
             y = lfilter(b, a, y, axis=-1) if causal else filtfilt(b, a, y, axis=-1)
         return y
     if how in ("spectral", "interp", "spectral_interpolation"):
