@@ -447,9 +447,11 @@ if __name__ == "__main__":
     t = ECGCinC2017Track(cfg={"preprocess":"denoise","broadband":"savgol","savgol_order":2,"win":9}) #SAVGOL WORKS
     t = ECGCinC2017Track(cfg={"preprocess":"denoise","powerline":"notch","f0":50.0,"q":40,"harmonics":(1,2)}) #NOTCH WORKS
     t = ECGCinC2017Track(cfg={"preprocess":"bandpass","ecg_band":"sym4","order":5})
+
+    cfg = {"preprocess":[{"preprocess":"denoise","broadband":"savgol","savgol_order":2,"win":9},{"preprocess":"denoise","powerline":"notch","f0":50.0,"q":40,"harmonics":(1,2)},{"preprocess":"bandpass","ecg_band":"sym4","order":5}]}
     """
     
-    t = ECGCinC2017Track()
+    t = ECGCinC2017Track(cfg = {"preprocess":[{"preprocess":"denoise","broadband":"savgol","savgol_order":2,"win":9},{"preprocess":"denoise","powerline":"notch","f0":50.0,"q":40,"harmonics":(1,2)},{"preprocess":"bandpass","ecg_band":"sym4","order":5}]})
     print(t.dataset_card())
     rep = t.run_smoke()
  
