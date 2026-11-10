@@ -476,6 +476,7 @@ def bandpass_notch(rec: "Recording", band=None, notch=None, order=4, channels=No
     Returns a NEW Recording; never mutates the input.
     """
     from scipy.signal import butter, filtfilt, iirnotch, lfilter
+    import pywt
     apply = (lambda b, a, x: lfilter(b, a, x, axis=-1)) if causal else \
             (lambda b, a, x: filtfilt(b, a, x, axis=-1))
     nyq = rec.fs / 2.0
@@ -487,10 +488,17 @@ def bandpass_notch(rec: "Recording", band=None, notch=None, order=4, channels=No
             continue
         x = a2
         if band is not None:
+            """
             lo, hi = band
             wn = [max(lo / nyq, 1e-6), min(hi / nyq, 0.999)]
             b, a = butter(order, wn, "band")
             x = apply(b, a, x)
+            """
+            print("CORRECT BAND")
+            x_dwt = pywt.wavedec(x,wavelet=band,level=order)
+            x_dwt[0] = np.zeros_like(x_dwt[0])
+            x_dwt[-1] = np.zeros_like(x_dwt[-1])
+            x = pywt.waverec(x_dwt,wavelet=band)
         if notch is not None:
             b, a = iirnotch(notch / nyq, notch_q)
             x = apply(b, a, x)
