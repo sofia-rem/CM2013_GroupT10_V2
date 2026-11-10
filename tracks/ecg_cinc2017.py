@@ -229,15 +229,6 @@ class ECGCinC2017Track(TrackAdapter):
         `cfg={"causal": True}` to measure what a deployable filter costs.
         """
 
-        # PLOT THE CURVE XXX
-        #print("CURVE")
-        # print(rec.fs)
-        # cfg defines what is done (seed, preprocess, impulsive, baseline, powerline, broadband, spectral_method, ar_order, etc.)
-
-     
-        
-
-
         cfg = self._cfg(cfg)
         how = str(cfg.get("preprocess", "none") or "none").lower()
         if how in ("denoise", "by_noise", "noise"):
@@ -261,6 +252,8 @@ class ECGCinC2017Track(TrackAdapter):
         if band is None and notch is None:
             return rec
         return bandpass_notch(rec, band=band, notch=notch,
+                              order=int(cfg.get("order") or 4),
+                              notch_q=float(cfg.get("q") or 30.0),
                               causal=bool(cfg.get("causal", False)))
 
     def extract_features(self, rec: Recording, cfg=None):
@@ -441,15 +434,22 @@ class ECGCinC2017Track(TrackAdapter):
 
 
 if __name__ == "__main__":
-
-    """
-    THESE ARE THE APPROPRIATE FILTERS, IN THE APPROPRIATE ORDER - UNSURE OF HOW TO RUN THEM TOGETHER HERE
-    t = ECGCinC2017Track(cfg={"preprocess":"denoise","broadband":"savgol","savgol_order":2,"win":9}) #SAVGOL WORKS
-    t = ECGCinC2017Track(cfg={"preprocess":"denoise","powerline":"notch","f0":50.0,"q":40,"harmonics":(1,2)}) #NOTCH WORKS
-    t = ECGCinC2017Track(cfg={"preprocess":"bandpass","ecg_band":"sym4","order":5})
-    """
-    
-    t = ECGCinC2017Track()
+    # One preprocessing configuration runs all three steps in denoise()'s
+    # documented order: baseline drift -> mains hum -> broadband residue.
+    preprocessing_cfg = {
+        "preprocess": "denoise",
+        "baseline": "wavelet",
+        "wavelet": "sym4",
+        "level": 5,
+        "powerline": "notch",
+        "f0": 50.0,
+        "q": 40.0,
+        "harmonics": (1, 2),
+        "broadband": "savgol",
+        "savgol_order": 2,
+        "win": 9,
+    }
+    t = ECGCinC2017Track(cfg=preprocessing_cfg)
     print(t.dataset_card())
     rep = t.run_smoke()
  
