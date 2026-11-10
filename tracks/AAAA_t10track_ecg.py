@@ -18,6 +18,7 @@ from adapter import (TrackAdapter, TrackMeta, Recording, default_baseline,
                      DENOISE_CFG_KEYS, SPECTRAL_CFG_KEYS)
 import biosignals as bio
 
+from rr_interval_prototype import low_template_correlation_fraction
 
 def _gauss(t, a, mu, s):
     return a * np.exp(-0.5 * ((t - mu) / s) ** 2)
@@ -94,9 +95,10 @@ def _synth_record(kind, fs, dur, rng, typicality=1.0):
             + hum * np.sin(2 * np.pi * 50 * t)
             + wander * np.sin(2 * np.pi * 0.4 * t))
 
-
+#This function
 def _rpeaks(ecg, fs):
     from scipy.signal import butter, filtfilt, find_peaks
+
     b, a = butter(3, [5 / (fs / 2), 15 / (fs / 2)], "band")
     f = filtfilt(b, a, ecg)
     d = np.diff(f, prepend=f[0]) ** 2
@@ -158,7 +160,9 @@ class ECGCinC2017Track(TrackAdapter):
     #: how you address that imbalance — it cannot be graded on a balanced fake.
     SMOKE_COUNTS = {"N": 34, "A": 16, "O": 24, "~": 12}
 
+    # Generates smoke data with random typicality from 0 to 1 (increased typicality -> low = almost real ecg; high = clean signal, _synth record function explains this)
     def smoke(self, per_class=None, fs=300, dur=20.0):
+
         """Synthetic four-class smoke set with a per-record **typicality** draw, so
         the classes overlap the way they do on the real challenge instead of being
         four separable caricatures — and with the real challenge's **class
@@ -169,15 +173,20 @@ class ECGCinC2017Track(TrackAdapter):
 
         Pass `per_class=<int>` for the old balanced cohort if you specifically
         want to isolate a change from the imbalance effect."""
+
         recs, k = [], 0
         for cls in self.meta.classes:
+
             n_cls = per_class if per_class is not None else self.SMOKE_COUNTS.get(cls, 20)
+
             for _ in range(n_cls):
+
                 r = np.random.default_rng(1000 + k)
                 x = _synth_record(cls, fs, dur, r, typicality=r.uniform(0.0, 1.0))
-                recs.append(Recording(group=f"R{k:04d}", fs=fs,
-                                      epochs={"ecg": x[None, :]}, labels=np.array([cls])))
+
+                recs.append(Recording(group=f"R{k:04d}", fs=fs, epochs={"ecg": x[None, :]}, labels=np.array([cls])))
                 k += 1
+                
         return recs
 
     # ---- module 2: PREPROCESSING (opt-in; the recipe is your decision) ----
@@ -228,7 +237,16 @@ class ECGCinC2017Track(TrackAdapter):
         real time could not use it; see `adapter.bandpass_notch.__doc__` and pass
         `cfg={"causal": True}` to measure what a deployable filter costs.
         """
+
         cfg = self._cfg(cfg)
+
+        #Enables usage of multiple preprocessing filters
+        pre = cfg.get("preprocess")
+        if isinstance(pre, list):
+            for i in pre:
+                rec = self.preprocess(rec, cfg = i)
+            return rec
+
         how = str(cfg.get("preprocess", "none") or "none").lower()
         if how in ("denoise", "by_noise", "noise"):
             return denoise(rec, impulsive=cfg.get("impulsive"), baseline=cfg.get("baseline"),
@@ -249,7 +267,7 @@ class ECGCinC2017Track(TrackAdapter):
                       "cfg['ecg_band'] yourself and justify the edges; note that this band also "
                       "removes the 50 Hz content one of your features measures.")
         if band is None and notch is None:
-            return rec
+            return rec      
         return bandpass_notch(rec, band=band, notch=notch,
                               causal=bool(cfg.get("causal", False)))
 
@@ -286,8 +304,14 @@ class ECGCinC2017Track(TrackAdapter):
             if method in ("welch", "default"):
                 return bio.bandpower(sig, f_s, band)
             return spectral_bandpower(sig, f_s, band, method=method, **mkw)
-        ecg = rec.epochs["ecg"][0]; fs = rec.fs
-        pk = _rpeaks(ecg, fs); rr = np.diff(pk) / fs
+        ecg = rec.epochs["ecg"][0]
+        fs = rec.fs
+        pk = _rpeaks(ecg, fs)
+        rr = np.diff(pk) / fs
+
+        low_corr_fraction = low_template_correlation_fraction(ecg, pk, fs)
+        #print(low_corr_fraction)
+
         if len(rr) >= 3:
             hr = 60.0 / np.mean(rr); sdnn = np.std(rr) * 1000
             rmssd = np.sqrt(np.mean(np.diff(rr) ** 2)) * 1000
@@ -298,11 +322,22 @@ class ECGCinC2017Track(TrackAdapter):
             hr = sdnn = rmssd = pnn50 = cv = irr = 0.0
         qrs_bp = _bp(ecg, fs, (5, 15))
         hf = _bp(ecg, fs, (40, min(fs / 2 - 1, 90)))
-        feats = [hr, sdnn, rmssd, pnn50, cv, irr, float(len(rr)),
+        feats = [hr, 
+                 sdnn, 
+                 rmssd, 
+                 pnn50, 
+                 cv, 
+                 irr, 
+                 float(len(rr)),
                  qrs_bp / (hf + 1e-9),                      # signal-quality index
                  _bp(ecg, fs, (49, 51)),                    # powerline power
-                 float(np.std(ecg)), float(kurtosis(ecg))]
+                 float(np.std(ecg)), 
+                 float(kurtosis(ecg)),
+                 low_corr_fraction
+            ]
         return np.array([feats]), np.array([rec.labels[0]]), rec.group
+
+    
 
     def baseline(self, cfg=None):
         """Module 5 — the supplied random forest. `cfg["imbalance"]` selects how
@@ -438,68 +473,81 @@ class ECGCinC2017Track(TrackAdapter):
         return recs
 
 
-# if __name__ == "__main__":
-#     t = ECGCinC2017Track()
-#     print(t.dataset_card())
-#     rep = t.run_smoke()
-#     from sklearn.metrics import f1_score
-#     print("SMOKE (synthetic) CV: macroF1=%.3f kappa=%.3f n_records=%d"
-#           % (f1_score(rep["y_true"], rep["y_pred"], average="macro"),
-#              rep["cohens_kappa"], rep["n_groups"]))
-#     print("spread:", rep["summary"])          # never the pooled number alone (§16.3)
-#     print("classes:", rep["labels"], "\nconfusion (rows=true):\n", rep["confusion"])
-#     # hold-out demo: fit on train records, write a predictions.csv on held-out records
-#     # smoke() emits records grouped by class, so shuffle before an index-based split
-#     recs = list(np.random.default_rng(0).permutation(t.smoke()))
-#     split = int(0.8 * len(recs))
-#     model = t.train_baseline(recs[:split])
-#     import tempfile, os
-#     out = os.path.join(tempfile.gettempdir(), "ecg_predictions.csv")
-#     t.write_submission(recs[split:], out, model)
-#     print("wrote submission:", out, "->", open(out).readline().strip(), "...")
-import sys, os, subprocess
-from sklearn.metrics import f1_score
-
 if __name__ == "__main__":
     t = ECGCinC2017Track()
-    print(t.dataset_card())
+    #print(t.dataset_card())
+    cfg = {
+        "preprocess": [
+            #{"preprocess":"denoise","broadband":"savgol","savgol_order":2,"win":9},
+            {"preprocess":"denoise","powerline":"notch","f0":50.0,"q":40,"harmonics":(1,2)},
+            #{"preprocess":"bandpass","ecg_band":"sym4","order":5}
+        ],
+        #"select": "anova",
+        #"select_k": 5
+    }
+    rep = t.run_smoke(cfg = cfg)
+    from sklearn.metrics import f1_score
+    print("SMOKE (synthetic) CV: macroF1=%.3f kappa=%.3f n_records=%d"
+          % (f1_score(rep["y_true"], rep["y_pred"], average="macro"),
+             rep["cohens_kappa"], rep["n_groups"]))
+    print("spread:", rep["summary"])          # never the pooled number alone (§16.3)
+    print("classes:", rep["labels"], "\nconfusion (rows=true):\n", rep["confusion"])
+    # hold-out demo: fit on train records, write a predictions.csv on held-out records
+    # smoke() emits records grouped by class, so shuffle before an index-based split
+    recs = list(np.random.default_rng(0).permutation(t.smoke()))
+    split = int(0.8 * len(recs))
+    model = t.train_baseline(recs[:split])
+    import tempfile, os
+    out = os.path.join(tempfile.gettempdir(), "ecg_predictions.csv")
+    t.write_submission(recs[split:], out, model)
+    print("wrote submission:", out, "->", open(out).readline().strip(), "...")
 
-    cache = os.path.join('..', 'data_cache', 'ecg_cinc2017') if os.path.isdir('../data_cache') else 'data_cache/ecg_cinc2017'
-    print("Downloading data...")
 
-    t.download(cache, subset=300); recs = t.load(cache)
+# import sys, os, subprocess
+# from sklearn.metrics import f1_score
 
-    print("Data downloaded")
+# if __name__ == "__main__":  
+#     t = ECGCinC2017Track()
+#     print(t.dataset_card())
 
-    recs = t.load(cache)
-    print(f"\nloaded {len(recs)} real ECG records")
+#     cache = os.path.join('..', 'data_cache', 'ecg_cinc2017') if os.path.isdir('../data_cache') else 'data_cache/ecg_cinc2017'
+#     t.download(cache, subset=2000); 
+#     recs = t.load(cache)
 
-    t.assert_no_holdout(recs)
+#     cfg = {
+#         "preprocess": [
+#             {"preprocess":"denoise","broadband":"savgol","savgol_order":2,"win":9},
+#             #{"preprocess":"denoise","powerline":"notch","f0":50.0,"q":40,"harmonics":(1,2)},
+#             #{"preprocess":"bandpass","ecg_band":"sym4","order":5}
+#         ],
+#     }
 
-    X, y, groups = t.build_dataset(recs)
+#     t.assert_no_holdout(recs)
 
-    print("Feature matrix:", X.shape)
-    print("Labels:", y.shape)
-    print("Unique records:", len(set(groups)))
+#     X, y, groups = t.build_dataset(recs)
 
-    rep = t.evaluate(X, y, groups)
+#     print("Feature matrix:", X.shape)
+#     print("Labels:", y.shape)
+#     print("Unique records:", len(set(groups)))
 
-    macro_f1 = f1_score(
-        rep["y_true"],
-        rep["y_pred"],
-        average="macro"
-    )   
+#     rep = t.evaluate(X, y, groups, cfg = cfg)
 
-    print("\n===== ECG CLASSIFICATION RESULTS =====")
-    print(f"Macro-F1: {macro_f1:.3f}")
-    print(f"Cohen's kappa: {rep['cohens_kappa']:.3f}")
-    print(f"Number of records: {rep['n_groups']}")
+#     macro_f1 = f1_score(
+#         rep["y_true"],
+#         rep["y_pred"],
+#         average="macro"
+#     )   
 
-    print("\nSpread across folds:")
-    print(rep["summary"])
+#     print("\n===== ECG CLASSIFICATION RESULTS =====")
+#     print(f"Macro-F1: {macro_f1:.3f}")
+#     print(f"Cohen's kappa: {rep['cohens_kappa']:.3f}")
+#     print(f"Number of records: {rep['n_groups']}")
 
-    print("\nClasses:")
-    print(rep["labels"])
+#     print("\nSpread across folds:")
+#     print(rep["summary"])
 
-    print("\nConfusion matrix (rows = true class):")
-    print(rep["confusion"])
+#     print("\nClasses:")
+#     print(rep["labels"])
+
+#     print("\nConfusion matrix (rows = true class):")
+#     print(rep["confusion"])
