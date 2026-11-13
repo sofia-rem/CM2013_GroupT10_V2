@@ -13,7 +13,7 @@ spread is half a result.
 
 | # | Date | What changed & why (one line) | Primary metric **with spread** | Better than previous? | If not — why it was kept | Commit |
 |---|---|---|---|---|---|---|
-| 1 | 2026-09-29 | supplied baseline, unchanged — establish the floor using 1999 records | mean Macro-F1 0.5963 (sd 0.0413, range 0.5500–0.6688 across 5 Folds) | — (baseline) | — | `a1b2c3d` |
+| 1 | 2026-11-13 | supplied baseline, unchanged — establish the floor using 1999 records | mean Macro-F1 0.5963 (sd 0.0413, range 0.5500–0.6688 across 5 Folds) | — (baseline) | — | `a1b2c3d` |
 | 2 |  |  |  | yes / no |  |  | 
 | 3 |  |  |  | yes / no |  |  |
 | 4 |  |  |  | yes / no |  |  |
@@ -118,7 +118,7 @@ between iterations. Record what actually happened.
 
 | Iteration | Who | Modules / tasks owned | Reviewed by |
 |---|---|---|---|
-| 1 |  |  |  |
+| 1 | Hampus | The whole group ran the default baseline in the beginning of the project but results got lost, Hampus ran the supplied baseline again i python virtual enviroment while having the correct library versions and asserting no holdouts |  |
 
 ## Final numbers (fill in once, at the end)
 
