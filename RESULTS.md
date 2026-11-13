@@ -86,13 +86,13 @@ add rows as the pipeline grows, and note the alternative you rejected.
 ## Iteration 1
 | Pipeline module | Option chosen | Alternatives considered | Why this one | Iteration | Revised later? |
 |---|---|---|---|---|---|
-| Data loading | 1,999 real PhysioNet ECG recordings | Synthetic smoke data | Establish performance on real ECG recordings | B0 | — |
-| Preprocessing | `none` | Bandpass, notch, wavelet | Preserve original preprocessing as the reference | B0 | — |
-| Feature extraction | Original 11 features | Additional HRV and quality features | Establish performance before modifying features | B0 | — |
-| Feature selection | `none` | ANOVA, mutual information | Preserve original baseline configuration | B0 | — |
-| Classification | Supplied Random Forest, balanced | Tuned RF, SVM | Establish reference performance before model comparisons | B0 | — |
-| Inference | Original implementation | — | No modifications required for reference baseline | B0 | — |
-| Reporting | Macro-F1, kappa, confusion matrix, per-class recall | — | Follow ECG evaluation requirements | B0 | — |
+| Data loading | 1,999 real PhysioNet ECG recordings | Synthetic smoke data | Establish performance on real ECG recordings | 1 | — |
+| Preprocessing | `none` | Bandpass, notch, wavelet | Preserve original preprocessing as the reference | 1 | — |
+| Feature extraction | Original 11 features | Additional HRV and quality features | Establish performance before modifying features | 1 | — |
+| Feature selection | `none` | ANOVA, mutual information | Preserve original baseline configuration | 1 | — |
+| Classification | Supplied Random Forest, balanced | Tuned RF, SVM | Establish reference performance before model comparisons | 1 | — |
+| Inference | Original implementation | — | No modifications required for reference baseline | 1 | — |
+| Reporting | Macro-F1, kappa, confusion matrix, per-class recall | — | Follow ECG evaluation requirements | 1 | — |
 
 
 
