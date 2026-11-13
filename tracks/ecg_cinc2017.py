@@ -228,16 +228,6 @@ class ECGCinC2017Track(TrackAdapter):
         real time could not use it; see `adapter.bandpass_notch.__doc__` and pass
         `cfg={"causal": True}` to measure what a deployable filter costs.
         """
-
-        # PLOT THE CURVE XXX
-        #print("CURVE")
-        # print(rec.fs)
-        # cfg defines what is done (seed, preprocess, impulsive, baseline, powerline, broadband, spectral_method, ar_order, etc.)
-
-     
-        
-
-
         cfg = self._cfg(cfg)
         how = str(cfg.get("preprocess", "none") or "none").lower()
         if how in ("denoise", "by_noise", "noise"):
@@ -441,20 +431,9 @@ class ECGCinC2017Track(TrackAdapter):
 
 
 if __name__ == "__main__":
-
-    """
-    THESE ARE THE APPROPRIATE FILTERS, IN THE APPROPRIATE ORDER - UNSURE OF HOW TO RUN THEM TOGETHER HERE
-    t = ECGCinC2017Track(cfg={"preprocess":"denoise","broadband":"savgol","savgol_order":2,"win":9}) #SAVGOL WORKS
-    t = ECGCinC2017Track(cfg={"preprocess":"denoise","powerline":"notch","f0":50.0,"q":40,"harmonics":(1,2)}) #NOTCH WORKS
-    t = ECGCinC2017Track(cfg={"preprocess":"bandpass","ecg_band":"sym4","order":5})
-
-    cfg = {"preprocess":[{"preprocess":"denoise","broadband":"savgol","savgol_order":2,"win":9},{"preprocess":"denoise","powerline":"notch","f0":50.0,"q":40,"harmonics":(1,2)},{"preprocess":"bandpass","ecg_band":"sym4","order":5}]}
-    """
-    
-    t = ECGCinC2017Track(cfg = {"preprocess":[{"preprocess":"denoise","broadband":"savgol","savgol_order":2,"win":9},{"preprocess":"denoise","powerline":"notch","f0":50.0,"q":40,"harmonics":(1,2)},{"preprocess":"bandpass","ecg_band":"sym4","order":5}]})
+    t = ECGCinC2017Track()
     print(t.dataset_card())
     rep = t.run_smoke()
- 
     from sklearn.metrics import f1_score
     print("SMOKE (synthetic) CV: macroF1=%.3f kappa=%.3f n_records=%d"
           % (f1_score(rep["y_true"], rep["y_pred"], average="macro"),

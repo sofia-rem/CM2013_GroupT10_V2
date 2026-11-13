@@ -1,25 +1,9 @@
-# Results log — `<your track>`, `<your team>`
+# Results log — `<ecg_cinc2017>`, `<T10>`
 
-> **Copy this file into YOUR team's project repository** (not this scaffold repo) as
-> `RESULTS.md`, and add one row per iteration as you go — not the night before the deadline.
-> It exists because Chapter 16 §16.3 defines an iteration as *done* only when it (1) runs end
-> to end to a result, (2) reports the primary metric **with its spread**, (3) is committed with
-> a note saying what changed and why, and (4) is at least as good as the previous iteration —
-> **or** says in writing why the change was kept anyway. This table is where (2), (3) and (4)
-> land; `git log` is where (1) becomes checkable. It also makes writing the report an assembly
-> job rather than an archaeology project.
->
-> **This file is graded.** `CAPSTONE_REPORT_RUBRIC.md` **Criterion 9 — Iteration & revision
-> history (3 pts)** takes `RESULTS.md` as its evidence, and it asks for one specific thing that
-> a forward-only log cannot show: **at least one earlier decision you went back and changed
-> because of a downstream result**, with the symptom that sent you back named. A row that
-> *lowered* the headline metric and was kept for a stated reason is full-marks evidence, not a
-> weakness. Rows here are also direct evidence for "Reproducibility & engineering" and "Report
-> quality & defence".
-
-**Track:** `<sleep_edf | ecg_cinc2017 | har | ctg_ctu_uhb | emg_ninapro | bci_eegmmidb>` ·
-**Split unit:** `<subject | record | recording>` · **Primary metric:** `<Cohen's κ | macro-F1>` ·
-**Evaluation mode(s):** `<new-subject | within-subject + new-subject>`
+**Track:** `ecg_cinc2017`
+**Split unit:** `record`
+**Primary metric:** `macro-F1` 
+**Evaluation mode(s):** `new-record`
 
 ## Iteration log
 
@@ -29,8 +13,8 @@ spread is half a result.
 
 | # | Date | What changed & why (one line) | Primary metric **with spread** | Better than previous? | If not — why it was kept | Commit |
 |---|---|---|---|---|---|---|
-| 1 | 2026-09-29 | *e.g.* supplied baseline, unchanged — establish the floor | mean κ 0.41 (sd 0.09, range 0.29–0.55 across 6 subjects) | — (baseline) | — | `a1b2c3d` |
-| 2 |  |  |  | yes / no |  |  |
+| 1 | 2026-09-29 | supplied baseline, unchanged — establish the floor using 1999 records | mean Macro-F1 0.5963 (sd 0.0413, range 0.5500–0.6688 across 5 Folds) | — (baseline) | — | `a1b2c3d` |
+| 2 |  |  |  | yes / no |  |  | 
 | 3 |  |  |  | yes / no |  |  |
 | 4 |  |  |  | yes / no |  |  |
 
@@ -98,6 +82,20 @@ add rows as the pipeline grows, and note the alternative you rejected.
 | 5. Classification, incl. `imbalance` | *e.g.* `imbalance="balanced"` | `"none"`, `"resample"`, `"threshold"` | *(if you kept the default, say you looked and why — a silent default earns nothing)* |  |  |
 | 6. Inference |  |  |  |  |  |
 | 7. Reporting |  |  |  |  |  |
+
+## Iteration 1
+| Pipeline module | Option chosen | Alternatives considered | Why this one | Iteration | Revised later? |
+|---|---|---|---|---|---|
+| Data loading | 1,999 real PhysioNet ECG recordings | Synthetic smoke data | Establish performance on real ECG recordings | B0 | — |
+| Preprocessing | `none` | Bandpass, notch, wavelet | Preserve original preprocessing as the reference | B0 | — |
+| Feature extraction | Original 11 features | Additional HRV and quality features | Establish performance before modifying features | B0 | — |
+| Feature selection | `none` | ANOVA, mutual information | Preserve original baseline configuration | B0 | — |
+| Classification | Supplied Random Forest, balanced | Tuned RF, SVM | Establish reference performance before model comparisons | B0 | — |
+| Inference | Original implementation | — | No modifications required for reference baseline | B0 | — |
+| Reporting | Macro-F1, kappa, confusion matrix, per-class recall | — | Follow ECG evaluation requirements | B0 | — |
+
+
+
 
 ## Revisions — the ones that went **backwards** (Criterion 9's actual evidence)
 
