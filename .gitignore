@@ -20,3 +20,9 @@ data_cache/
 # this entry is a defensive backstop in case a solutions/ dir is ever added here
 labs/solutions/
 **/solutions/
+
+# Python virtual environment
+.venv/
+
+
+
