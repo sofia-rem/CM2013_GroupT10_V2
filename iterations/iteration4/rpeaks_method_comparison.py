@@ -49,10 +49,10 @@ def main():
 
 
     configs = {
-        "Default, baseline from iteration 3": {
+        "Normal": {
             "seed" : SEED,
             "preprocess": "none",
-            "r_peak": "R2",
+            "r_peak": "R0",
             "select": "anova",
             "select_k": 11,
             "imbalance": "balanced",
@@ -60,9 +60,24 @@ def main():
             "classifier": "rf",
             "n_estimators" : 200,
             "min_samples_leaf": 5,
+            "include_short_long_rr_pair": True,
         },
 
-        "short long ratio": {
+        "Better": {
+            "seed" : SEED,
+            "preprocess": "none",
+            "r_peak": "R1",
+            "select": "anova",
+            "select_k": 11,
+            "imbalance": "balanced",
+            "cv_max_splits": 5,
+            "classifier": "rf",
+            "n_estimators" : 200,
+            "min_samples_leaf": 5,
+            "include_short_long_rr_pair": True,
+        },   
+
+        "even better": {
             "seed" : SEED,
             "preprocess": "none",
             "r_peak": "R2",
@@ -74,7 +89,21 @@ def main():
             "n_estimators" : 200,
             "min_samples_leaf": 5,
             "include_short_long_rr_pair": True,
-        },   
+        },
+
+        "Best": {
+            "seed" : SEED,
+            "preprocess": "none",
+            "r_peak": "R3",
+            "select": "anova",
+            "select_k": 11,
+            "imbalance": "balanced",
+            "cv_max_splits": 5,
+            "classifier": "rf",
+            "n_estimators" : 200,
+            "min_samples_leaf": 5,
+            "include_short_long_rr_pair": True,
+        },  
     }
 
 
@@ -112,7 +141,7 @@ def main():
     printDataInfo(track, records)
     
     n_configs = len(configs)
-    n_cols = 3
+    n_cols = 2
     n_rows = math.ceil(n_configs / n_cols)
 
     fig, axes = plt.subplots(

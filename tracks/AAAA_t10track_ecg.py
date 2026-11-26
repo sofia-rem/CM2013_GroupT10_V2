@@ -285,16 +285,8 @@ def _rpeaks_improved(ecg, fs):
 def _try_new_rpeaks(ecg,fs):
     rpeaks_found = []
 
-    # assume no BPM > 200
-    bpm_max = 200
-    min_gap = 60 / bpm_max * fs # minimum points on ecg between R-peaks
-
-    bpm_min = 40 # assume that BPM > 40 always, check if something there otherwise
-    max_gap = 60 / bpm_min * fs
-
     # width QRS-complex 70-110 ms -> assume wide at 120 ms = 0.12 s
     qrs_wid = int(0.12 * fs/2) * 2 # make sure it's dividible by 2          ca. 36-37 frames
-    # print("qrs_wid",+ qrs_wid)
 
     ecg_defined = 20 * np.gradient(ecg)
     ecg_biss = np.gradient(ecg_defined)
@@ -319,42 +311,9 @@ def _try_new_rpeaks(ecg,fs):
                             the_min_k = k
                     rpeaks_found.append(the_min_k)
 
-    #print(rpeaks_found)
     rpeaks_found = np.unique(rpeaks_found)
-    #print(rpeaks_found)
-
-    rpeaks_found_2 = []
-
-    """
-    # divide clusters - DOES NOT WORK - THIS ONE REMOVED LITERALLY EVERY REAL ONE AND KEPT SEVERAL FAKE ONES
-    i = 0
-    for j in range(len(rpeaks_found)-1):
-        # if next is ok
-        if j > i:
-            i = j
-            print(len(rpeaks_found))
-            print("X",+i)
-            while(i < len(rpeaks_found)-1 and (rpeaks_found[i+1] < rpeaks_found[i] + qrs_wid)):
-                i = i+1
-                print("Y",+i)
-
-            # know now that cluster is between rpeaks_found[j] and rpeaks_found[i]
-            rpeaks_cluster = rpeaks_found[j:i+1]
-            print("ZZZZ",+rpeaks_cluster)
-
-            # if long enough to do derived (over 5)
-            if len(rpeaks_cluster) > 4:
-                rpeaks_cluster_prim = np.gradient(rpeaks_cluster)
-                rpeaks_cluster_prim_norm = abs(rpeaks_cluster_prim - np.mean(rpeaks_cluster_prim))
-                the_one_peak = np.argmax(rpeaks_cluster_prim_norm)
-            else:
-                the_one_peak = np.argmax(rpeaks_cluster)
-    
-            rpeaks_found_2.append(the_one_peak)
-    """
-
-    # ATTEMPT 2 AT DIVIDING THE PEAKS
-    # OR I GUESS COMBINING THE PEAKS INTO 1
+    if len(rpeaks_found) == 0:
+        return np.array([], dtype = int)
 
     # define first peaks, and last peaks
     the_peak_width = 80
@@ -378,24 +337,17 @@ def _try_new_rpeaks(ecg,fs):
 
     rpeaks_first = rpeaks_first.astype(int)
     rpeaks_last = rpeaks_last.astype(int)
-    #print(rpeaks_first)
-    #print(rpeaks_last)
-
     rpeaks_final = []
+
     for i in range(len(rpeaks_first)):
-        #print("rpeakdiv")
         if rpeaks_first[i] == rpeaks_last[i]:
             rpeaks_final.append(int(rpeaks_first[i]))
         else:
             peak_div = ecg_defined[int(rpeaks_first[i]):int(rpeaks_last[i])]
-            #print(peak_div)
-            #print(rpeaks_first[i])
-            #print(rpeaks_last[i])
             peak_div = abs(peak_div - np.mean(peak_div))
             extrm_div = np.argmax(peak_div)
             rpeaks_final.append(int(extrm_div))
 
-    # return np.array(rpeaks_final) BAD -> DOES NOT REALLY WORK
 
     r_returns_uwu = []
     for i in range(len(rpeaks_first)):
@@ -404,45 +356,12 @@ def _try_new_rpeaks(ecg,fs):
         if len(qrs_peak) < 3:
             r_returns_uwu.append(rpeaks_first[i])       # if less than 3 detected frames on peak -> take first frame as peak
         else : 
-            #print("XXXXXXXXX")
             qrs_peak = abs(qrs_peak - np.mean(qrs_peak))
             qrs_max_index = np.argmax(qrs_peak)
             qrs_max_index_tot = qrs_max_index + rpeaks_first[i]
             r_returns_uwu.append(qrs_max_index_tot)
     return np.array(r_returns_uwu)
 
-    # stack them one by one - THIS ONE RETURNS FIRST AND LAST VALUES OF BLOCK OF DETECTIONS FOR EACH QRS
-    r_returns = []
-    for i in range (len(rpeaks_first)):
-        r_returns.append(rpeaks_first[i])
-        r_returns.append(rpeaks_last[i])
-    rpeaks_first_last = np.array(r_returns)
-
-    """
-    print(rpeaks_first)
-    print(rpeaks_last)
-    print(type(rpeaks_first))
-    print(type(rpeaks_last))
-    rpeaks_first = np.asarray(rpeaks_first)
-    rpeaks_last = np.asarray(rpeaks_last)
-    print(rpeaks_first)
-    print(rpeaks_last)
-    print(type(rpeaks_first))
-    print(type(rpeaks_last))
-    """
-    #rpeaks_first_last = np.concatenate(rpeaks_first, rpeaks_last) #BEED TO CHANGE TO INT BEFORE THIS - DOES NOT WORK YET XXXXXXXXXX
-    #rpeaks_first_last_order = np.sort(np.unique(rpeaks_first_last))
-    return rpeaks_first_last
-
-
-    #return rpeaks_first
-#    return np.array(rpeaks_found_2)
-
-
-
-
-    
-    #return np.array(rpeaks_found)
 
 def _divisible_len(ecg,fs):
     # XXXXXXX THIS ONE WORKS PRETTY WELL !!!!!!!!!!!!!
@@ -451,18 +370,16 @@ def _divisible_len(ecg,fs):
 
     IO_index = np.array([])
     for i in range(len(list_o_ecg)):
-        # 
         r_peaks_o = _try_new_rpeaks(list_o_ecg[i],fs)
-        # print(r_peaks_o)
-        # have r-peaks w. wrong numbers
 
+        # have r-peaks w. wrong numbers
         IO_segment = np.zeros(len(list_o_ecg[i]))
         for j in r_peaks_o:
             if (j - int(j)) == 0.0:
-                # print("X" ,+  j)
+
                 IO_segment[int(j)] = 1
         IO_index = np.concatenate((IO_index,IO_segment))
-        #print(i)
+
 
     r_peaks_now = []
     for i in range(len(IO_index)):
@@ -608,7 +525,6 @@ def _short_long_rr_pair_ratio(
             )
 
     return float(np.mean(matches)) if matches else np.nan
-
 
 
 def main():
@@ -826,6 +742,8 @@ class ECGCinC2017Track(TrackAdapter):
             pk = _rpeaks_adaptive(ecg, fs)
         elif rpeak_method in ("advanced", "R2"):
             pk = _rpeaks_improved(ecg, fs)
+        elif rpeak_method in ("R3"):
+            pk = _divisible_len(ecg, fs)
         else:
             pk = _rpeaks(ecg, fs)
 
