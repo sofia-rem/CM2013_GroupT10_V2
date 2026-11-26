@@ -1,8 +1,5 @@
 """
-Test if including xcorr_peak improves class recall
-
-Total classifiers test: 9
-N_estimator = 200 for all classifiers
+Test rpeak detection methods, 4 different methods tested (default, adaptive threshold, adaptive threshold + missing peak detection, new method)
 
 Purpose:
     Further testing of classifiers, trying to tune them
@@ -17,7 +14,9 @@ Primary metric:
     Macro-F1
 
 Results:
+    No reason to change rpeak detection method
 
+    
 
 
 """
