@@ -867,7 +867,7 @@ class ECGCinC2017Track(TrackAdapter):
                  sampen,
                  drren,
                  #qrsstd,
-                 qrsmed,
+                 #qrsmed,
                  ]
         if include_short_long_rr_pair:
             feats.append(short_long_rr_pair)
