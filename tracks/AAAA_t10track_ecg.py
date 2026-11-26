@@ -388,6 +388,16 @@ def _divisible_len(ecg,fs):
 
     return np.array(r_peaks_now)
 
+def _MAD(rpeaks):
+    # 
+    RRI = []
+    for i in range(len(rpeaks)-1):
+        RRI[i] = abs(rpeaks[i]-rpeaks[i+1])
+
+    RRI = np.array(RRI) - np.median(RRI)
+    return(np.median(RRI))
+
+
 def _rr_sample_entropy(rr, m=2, r_ratio=0.2):
 
     rr = np.asarray(rr, dtype=float)
