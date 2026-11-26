@@ -32,6 +32,91 @@ Results:
     one that is being the most missclassified i think a selector which improve the noisy class could prove beneficial (even if it comes at a cost of disturbing the other classes).
 
     But the main improvment in the noisy class might come from extracting better features for noisy classification
+
+    None:
+    | true \ pred | N | A | O | ~ | n |
+    |---|---|---|---|---|---|
+    | **N** | 0.93 | 0.00 | 0.06 | 0.01 | 1200 |
+    | **A** | 0.08 | 0.70 | 0.21 | 0.01 | 173 |
+    | **O** | 0.40 | 0.04 | 0.56 | 0.00 | 567 |
+    | **~** | 0.42 | 0.00 | 0.14 | 0.44 | 59 |
+
+    **macro_f1** — mean macro_f1 0.694 (sd 0.035, range 0.654-0.744 across 5 folds); pooled 0.699
+    - cohens_kappa: pooled 0.593, mean over folds 0.592
+    - balanced_accuracy: pooled 0.657, mean over folds 0.657
+    - accuracy: pooled 0.789, mean over folds 0.789
+    - worst fold: 3 (macro_f1 0.654, n=400) — read this one's errors before the mean's
+
+    Variance:
+    | true \ pred | N | A | O | ~ | n |
+    |---|---|---|---|---|---|
+    | **N** | 0.93 | 0.00 | 0.06 | 0.01 | 1200 |
+    | **A** | 0.08 | 0.70 | 0.21 | 0.01 | 173 |
+    | **O** | 0.40 | 0.04 | 0.56 | 0.00 | 567 |
+    | **~** | 0.42 | 0.00 | 0.14 | 0.44 | 59 |
+
+    **macro_f1** — mean macro_f1 0.694 (sd 0.035, range 0.654-0.744 across 5 folds); pooled 0.699
+    - cohens_kappa: pooled 0.593, mean over folds 0.592
+    - balanced_accuracy: pooled 0.657, mean over folds 0.657
+    - accuracy: pooled 0.789, mean over folds 0.789
+    - worst fold: 3 (macro_f1 0.654, n=400) — read this one's errors before the mean's
+
+    Anova (k=8):
+    | true \ pred | N | A | O | ~ | n |
+    |---|---|---|---|---|---|
+    | **N** | 0.90 | 0.01 | 0.08 | 0.01 | 1200 |
+    | **A** | 0.08 | 0.69 | 0.23 | 0.00 | 173 |
+    | **O** | 0.42 | 0.05 | 0.52 | 0.01 | 567 |
+    | **~** | 0.37 | 0.03 | 0.14 | 0.46 | 59 |
+
+    **macro_f1** — mean macro_f1 0.669 (sd 0.045, range 0.604-0.709 across 5 folds); pooled 0.673
+    - cohens_kappa: pooled 0.548, mean over folds 0.547
+    - balanced_accuracy: pooled 0.644, mean over folds 0.642
+    - accuracy: pooled 0.764, mean over folds 0.764
+    - worst fold: 1 (macro_f1 0.604, n=400) — read this one's errors before the mean's
+
+    Anova (k=11):
+    | true \ pred | N | A | O | ~ | n |
+    |---|---|---|---|---|---|
+    | **N** | 0.92 | 0.00 | 0.07 | 0.01 | 1200 |
+    | **A** | 0.08 | 0.69 | 0.23 | 0.01 | 173 |
+    | **O** | 0.40 | 0.05 | 0.55 | 0.01 | 567 |
+    | **~** | 0.39 | 0.02 | 0.12 | 0.47 | 59 |
+
+    **macro_f1** — mean macro_f1 0.688 (sd 0.043, range 0.621-0.733 across 5 folds); pooled 0.693
+    - cohens_kappa: pooled 0.579, mean over folds 0.578
+    - balanced_accuracy: pooled 0.659, mean over folds 0.656
+    - accuracy: pooled 0.780, mean over folds 0.780
+    - worst fold: 1 (macro_f1 0.621, n=400) — read this one's errors before the mean's
+
+    Tree:
+    | true \ pred | N | A | O | ~ | n |
+    |---|---|---|---|---|---|
+    | **N** | 0.88 | 0.00 | 0.09 | 0.03 | 1200 |
+    | **A** | 0.08 | 0.67 | 0.24 | 0.01 | 173 |
+    | **O** | 0.36 | 0.06 | 0.56 | 0.03 | 567 |
+    | **~** | 0.32 | 0.03 | 0.10 | 0.54 | 59 |
+
+    **macro_f1** — mean macro_f1 0.656 (sd 0.039, range 0.625-0.724 across 5 folds); pooled 0.657
+    - cohens_kappa: pooled 0.557, mean over folds 0.557
+    - balanced_accuracy: pooled 0.664, mean over folds 0.666
+    - accuracy: pooled 0.762, mean over folds 0.762
+    - worst fold: 1 (macro_f1 0.625, n=400) — read this one's errors before the mean's
+
+    Lasso:
+    | true \ pred | N | A | O | ~ | n |
+    |---|---|---|---|---|---|
+    | **N** | 0.93 | 0.00 | 0.06 | 0.01 | 1200 |
+    | **A** | 0.08 | 0.70 | 0.21 | 0.01 | 173 |
+    | **O** | 0.40 | 0.04 | 0.56 | 0.00 | 567 |
+    | **~** | 0.42 | 0.00 | 0.14 | 0.44 | 59 |
+
+    **macro_f1** — mean macro_f1 0.694 (sd 0.035, range 0.654-0.744 across 5 folds); pooled 0.699
+    - cohens_kappa: pooled 0.593, mean over folds 0.592
+    - balanced_accuracy: pooled 0.657, mean over folds 0.657
+    - accuracy: pooled 0.789, mean over folds 0.789
+    - worst fold: 3 (macro_f1 0.654, n=400) — read this one's errors before the mean's
+
 """
 
 import sys

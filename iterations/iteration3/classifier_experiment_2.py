@@ -69,30 +69,30 @@ Results:
     3 Nearest Neighbour:
     | true \ pred | N | A | O | ~ | n |
     |---|---|---|---|---|---|
-    | **N** | 0.88 | 0.01 | 0.10 | 0.01 | 1200 |
-    | **A** | 0.10 | 0.71 | 0.20 | 0.00 | 173 |
-    | **O** | 0.39 | 0.08 | 0.52 | 0.01 | 567 |
-    | **~** | 0.39 | 0.03 | 0.05 | 0.53 | 59 |
+    | **N** | 0.85 | 0.01 | 0.12 | 0.01 | 1200 |
+    | **A** | 0.10 | 0.68 | 0.20 | 0.02 | 173 |
+    | **O** | 0.38 | 0.08 | 0.52 | 0.01 | 567 |
+    | **~** | 0.39 | 0.02 | 0.12 | 0.47 | 59 |
 
-    **macro_f1** — mean macro_f1 0.665 (sd 0.042, range 0.628-0.733 across 5 folds); pooled 0.669
-    - cohens_kappa: pooled 0.535, mean over folds 0.534
-    - balanced_accuracy: pooled 0.658, mean over folds 0.660
-    - accuracy: pooled 0.753, mean over folds 0.753
-    - worst fold: 0 (macro_f1 0.628, n=400) — read this one's errors before the mean's
+    **macro_f1** — mean macro_f1 0.637 (sd 0.029, range 0.599-0.678 across 5 folds); pooled 0.638
+    - cohens_kappa: pooled 0.503, mean over folds 0.502
+    - balanced_accuracy: pooled 0.633, mean over folds 0.635
+    - accuracy: pooled 0.733, mean over folds 0.733
+    - worst fold: 0 (macro_f1 0.599, n=400) — read this one's errors before the mean's
 
     10 Nearest Neighbour:
     | true \ pred | N | A | O | ~ | n |
     |---|---|---|---|---|---|
-    | **N** | 0.88 | 0.01 | 0.10 | 0.01 | 1200 |
-    | **A** | 0.10 | 0.71 | 0.20 | 0.00 | 173 |
-    | **O** | 0.39 | 0.08 | 0.52 | 0.01 | 567 |
-    | **~** | 0.39 | 0.03 | 0.05 | 0.53 | 59 |
+    | **N** | 0.90 | 0.01 | 0.09 | 0.01 | 1200 |
+    | **A** | 0.07 | 0.73 | 0.20 | 0.01 | 173 |
+    | **O** | 0.40 | 0.07 | 0.51 | 0.01 | 567 |
+    | **~** | 0.42 | 0.07 | 0.05 | 0.46 | 59 |
 
-    **macro_f1** — mean macro_f1 0.665 (sd 0.042, range 0.628-0.733 across 5 folds); pooled 0.669
-    - cohens_kappa: pooled 0.535, mean over folds 0.534
-    - balanced_accuracy: pooled 0.658, mean over folds 0.660
-    - accuracy: pooled 0.753, mean over folds 0.753
-    - worst fold: 0 (macro_f1 0.628, n=400) — read this one's errors before the mean's
+    **macro_f1** — mean macro_f1 0.665 (sd 0.052, range 0.606-0.723 across 5 folds); pooled 0.668
+    - cohens_kappa: pooled 0.547, mean over folds 0.546
+    - balanced_accuracy: pooled 0.650, mean over folds 0.651
+    - accuracy: pooled 0.761, mean over folds 0.761
+    - worst fold: 1 (macro_f1 0.606, n=400) — read this one's errors before the mean's
 
     SVM: gamma = auto
     | true \ pred | N | A | O | ~ | n |

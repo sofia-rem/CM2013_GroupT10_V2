@@ -719,7 +719,7 @@ class ECGCinC2017Track(TrackAdapter):
                  sampen,
                  drren,
                  #qrsstd,
-                 qrsmed,
+                 #qrsmed,
                  ]
         if include_xcorr_peak:
             feats.append(xcorr_peak_p25)
