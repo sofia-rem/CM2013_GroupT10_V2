@@ -62,7 +62,7 @@ def main():
             "min_samples_leaf": 5,
         },
 
-        "Including xcorr_peak": {
+        "short long ratio": {
             "seed" : SEED,
             "preprocess": "none",
             "r_peak": "R2",
@@ -73,7 +73,7 @@ def main():
             "classifier": "rf",
             "n_estimators" : 200,
             "min_samples_leaf": 5,
-            "include_xcorr_peak": True,
+            "include_short_long_rr_pair": True,
         },   
     }
 
