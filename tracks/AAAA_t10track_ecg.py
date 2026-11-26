@@ -393,75 +393,31 @@ def _qrs_morphology_correlations(ecg, peaks, fs, min_beats=5):
     return correlations
 
 
-def _lagwise_normalized_cross_correlation_peak(x, y, max_lag):
-    """Return the best normalized correlation between two beats over small lags."""
-    x = np.asarray(x, dtype=float)
-    y = np.asarray(y, dtype=float)
-    best = -np.inf
-
-    for lag in range(-max_lag, max_lag + 1):
-        if lag < 0:
-            xa, ya = x[-lag:], y[:lag]
-        elif lag > 0:
-            xa, ya = x[:-lag], y[lag:]
-        else:
-            xa, ya = x, y
-
-        if xa.size < 3:
-            continue
-        xa = xa - np.mean(xa)
-        ya = ya - np.mean(ya)
-        denominator = np.linalg.norm(xa) * np.linalg.norm(ya)
-        if denominator <= np.finfo(float).eps:
-            continue
-        best = max(best, float(np.dot(xa, ya) / denominator))
-
-    return best if np.isfinite(best) else np.nan
-
-
-def _beat_template_xcorr_peak_p25(
-    ecg,
-    peaks,
-    fs,
-    before_s=0.12,
-    after_s=0.16,
-    max_lag_s=0.05,
-    min_beats=5,
+def _short_long_rr_pair_ratio(
+    rr, window=12, short_ratio=0.80, long_ratio=1.20, min_intervals=6
 ):
-    """25th percentile of beat-to-template normalized cross-correlation peaks."""
-    ecg = np.asarray(ecg, dtype=float)
-    peaks = np.asarray(peaks, dtype=int)
-    if fs <= 0:
+    """Fraction of adjacent RR pairs that form a short-then-long pattern."""
+    rr = np.asarray(rr, dtype=float)
+    rr = rr[np.isfinite(rr) & (rr > 0)]
+    if rr.size < min_intervals:
         return np.nan
 
-    before = int(round(before_s * fs))
-    after = int(round(after_s * fs))
-    max_lag = max(1, int(round(max_lag_s * fs)))
+    matches = []
+    half = window // 2
+    for index in range(rr.size - 1):
+        start = max(0, index - half)
+        stop = min(rr.size, index + 2 + half)
+        neighbours = np.concatenate((rr[start:index], rr[index + 2 : stop]))
+        if neighbours.size < 3:
+            continue
+        reference = float(np.median(neighbours))
+        if reference > np.finfo(float).eps:
+            matches.append(
+                rr[index] < short_ratio * reference
+                and rr[index + 1] > long_ratio * reference
+            )
 
-    beats = []
-    for peak in peaks:
-        start, stop = peak - before, peak + after
-        if start >= 0 and stop <= ecg.size:
-            beat = ecg[start:stop]
-            if beat.size and np.all(np.isfinite(beat)):
-                beats.append(beat)
-
-    if len(beats) < min_beats:
-        return np.nan
-
-    matrix = np.asarray(beats, dtype=float)
-    template = np.median(matrix, axis=0)
-    correlation_peaks = np.asarray(
-        [
-            _lagwise_normalized_cross_correlation_peak(beat, template, max_lag)
-            for beat in matrix
-        ],
-        dtype=float,
-    )
-    correlation_peaks = correlation_peaks[np.isfinite(correlation_peaks)]
-    if correlation_peaks.size < min_beats:
-        return np.nan
-    return float(np.percentile(correlation_peaks, 25))
+    return float(np.mean(matches)) if matches else np.nan
 
 
 
@@ -526,7 +482,7 @@ class ECGCinC2017Track(TrackAdapter):
     #: Sleep-EDF, this track's `preprocess()` forwards the whole Chapter 8
     #: denoise menu, and its HRV/quality features include band powers integrated
     #: from a Chapter 7 estimator — so both stage-2 and stage-3 menus are real.
-    SUPPORTED_CFG_KEYS = DENOISE_CFG_KEYS | SPECTRAL_CFG_KEYS | {"ecg_band", "r_peak", "include_xcorr_peak", "classifier", "n_estimators", "n_neighbors", "weights", "C", "kernel", "min_samples_leaf", "max_depth", "min_samples_leaf", "gamma"}
+    SUPPORTED_CFG_KEYS = DENOISE_CFG_KEYS | SPECTRAL_CFG_KEYS | {"ecg_band", "r_peak", "include_short_long_rr_pair", "classifier", "n_estimators", "n_neighbors", "weights", "C", "kernel", "min_samples_leaf", "max_depth", "min_samples_leaf", "gamma"}
 
     #: Class counts for the synthetic smoke set, in the same lopsided shape as the
     #: real challenge (Normal dominates; AF and Noisy are rare). The rubric grades
@@ -685,9 +641,11 @@ class ECGCinC2017Track(TrackAdapter):
 
         rr = np.diff(pk) / fs
         qrs_morph = _qrs_morphology_correlations(ecg, pk, fs)
-        include_xcorr_peak = bool(cfg.get("include_xcorr_peak", False))
-        if include_xcorr_peak:
-            xcorr_peak_p25 = _beat_template_xcorr_peak_p25(ecg, pk, fs)
+        include_short_long_rr_pair = bool(
+            cfg.get("include_short_long_rr_pair", False)
+        )
+        if include_short_long_rr_pair:
+            short_long_rr_pair = _short_long_rr_pair_ratio(rr)
 
         if len(rr) >= 3:
             hr = 60.0 / np.mean(rr); sdnn = np.std(rr) * 1000
@@ -721,8 +679,8 @@ class ECGCinC2017Track(TrackAdapter):
                  #qrsstd,
                  qrsmed,
                  ]
-        if include_xcorr_peak:
-            feats.append(xcorr_peak_p25)
+        if include_short_long_rr_pair:
+            feats.append(short_long_rr_pair)
         return np.array([feats]), np.array([rec.labels[0]]), rec.group
 
     def select_features(self, X, y, cfg=None):
