@@ -500,6 +500,28 @@ def _qrs_morphology_correlations(ecg, peaks, fs, min_beats=5):
     return correlations
 
 
+def _low_template_correlation_fraction(
+    ecg, peaks, fs, threshold=0.50, before_s=0.20, after_s=0.40, min_beats=3
+):
+    """Fraction of beats whose correlation with the median beat is below threshold."""
+    before, after = int(round(before_s * fs)), int(round(after_s * fs))
+    beats = [
+        np.asarray(ecg[peak - before : peak + after], dtype=float)
+        for peak in np.asarray(peaks, dtype=int)
+        if peak - before >= 0 and peak + after <= len(ecg)
+    ]
+    beats = [beat for beat in beats if np.all(np.isfinite(beat))]
+    if len(beats) < min_beats:
+        return np.nan
+
+    template = np.median(np.asarray(beats), axis=0)
+    correlations = np.asarray(
+        [np.corrcoef(beat, template)[0, 1] for beat in beats], dtype=float
+    )
+    correlations = correlations[np.isfinite(correlations)]
+    return float(np.mean(correlations < threshold)) if correlations.size >= min_beats else np.nan
+
+
 def _short_long_rr_pair_ratio(
     rr, window=12, short_ratio=0.80, long_ratio=1.20, min_intervals=6
 ):
@@ -588,7 +610,7 @@ class ECGCinC2017Track(TrackAdapter):
     #: Sleep-EDF, this track's `preprocess()` forwards the whole Chapter 8
     #: denoise menu, and its HRV/quality features include band powers integrated
     #: from a Chapter 7 estimator — so both stage-2 and stage-3 menus are real.
-    SUPPORTED_CFG_KEYS = DENOISE_CFG_KEYS | SPECTRAL_CFG_KEYS | {"ecg_band", "r_peak", "include_short_long_rr_pair", "classifier", "n_estimators", "n_neighbors", "weights", "C", "kernel", "min_samples_leaf", "max_depth", "min_samples_leaf", "gamma"}
+    SUPPORTED_CFG_KEYS = DENOISE_CFG_KEYS | SPECTRAL_CFG_KEYS | {"ecg_band", "r_peak", "include_short_long_rr_pair", "include_low_template_correlation", "classifier", "n_estimators", "n_neighbors", "weights", "C", "kernel", "min_samples_leaf", "max_depth", "min_samples_leaf", "gamma"}
 
     #: Class counts for the synthetic smoke set, in the same lopsided shape as the
     #: real challenge (Normal dominates; AF and Noisy are rare). The rubric grades
@@ -754,6 +776,11 @@ class ECGCinC2017Track(TrackAdapter):
         )
         if include_short_long_rr_pair:
             short_long_rr_pair = _short_long_rr_pair_ratio(rr)
+        include_low_template_correlation = bool(
+            cfg.get("include_low_template_correlation", False)
+        )
+        if include_low_template_correlation:
+            low_template_correlation = _low_template_correlation_fraction(ecg, pk, fs)
 
         if len(rr) >= 3:
             hr = 60.0 / np.mean(rr); sdnn = np.std(rr) * 1000
@@ -789,6 +816,8 @@ class ECGCinC2017Track(TrackAdapter):
                  ]
         if include_short_long_rr_pair:
             feats.append(short_long_rr_pair)
+        if include_low_template_correlation:
+            feats.append(low_template_correlation)
         return np.array([feats]), np.array([rec.labels[0]]), rec.group
 
     def select_features(self, X, y, cfg=None):
